@@ -40,44 +40,33 @@ public class issueHealthId {
             .version(HttpClient.Version.HTTP_2)
             .build();
 
+    public static HttpResponse<String> authenticateClient(String app) throws Exception {
 
-    public static HttpResponse<String> authenticateClient() throws Exception {
-
+        String client_id = "";
+        String secret = "";
         // form parameters
+        
+        if (app.equals("EDT"))
+        {  
+            client_id =  "EDT";
+            secret = "***";
+        }
+        else if (app.equals("PTracker"))
+        {
+            client_id = "PTracker";
+            secret = "***";
+        }
+        else if (app.equals("Quantum"))
+        {
+            client_id = "Quantum";
+            secret = "***";
+        }
+
         Map<Object, Object> data;
         data = new HashMap<>();
         data.put("grant_type", "client_credentials");
-        data.put("client_id", "fiddler");
-        data.put("client_secret", "***");
-
-        HttpRequest request = HttpRequest.newBuilder()
-                .POST(buildFormDataFromMap(data))
-                .uri(URI.create("http://localhost:8080/auth/oauth2_token"))
-                .setHeader("User-Agent", "Java 11 HttpClient Bot") // add request header
-                .header("Content-Type", "application/x-www-form-urlencoded")
-                .build();
-
-        HttpResponse<String> response = httpClient.send(request, HttpResponse.BodyHandlers.ofString());
-
-
-        // print status code
-        System.out.println(response.statusCode());
-
-        // print response body
-        System.out.println(response.body());
-        return response;
-
-    }
-
-    HttpResponse<String> refreshToken(String refreshToken) throws Exception {
-
-        // form parameters
-        Map<Object, Object> data;
-        data = new HashMap<>();
-        data.put("grant_type", "refresh_token");
-        data.put("refresh_token", refreshToken);
-        data.put("client_id", "fiddler");
-        data.put("client_secret", "***");
+        data.put("client_id", client_id);
+        data.put("client_secret", secret);
 
         HttpRequest request = HttpRequest.newBuilder()
                 .POST(buildFormDataFromMap(data))
@@ -119,12 +108,12 @@ public class issueHealthId {
         String user = "santedb";
         String password = "***";
 
-        String mp = "e942eb20-dc4a-4b0d-b919-ec21b5c60c16";
+        String mp = "ef6ca111-fd5a-4f78-b89f-db29acc5f3d7";
 
         try (Connection con = DriverManager.getConnection(db_url, user, password);
                 
                 Statement st_guid_ident = con.createStatement();
-                ResultSet rs_guid_ident = st_guid_ident.executeQuery("SELECT distinct src_ent_id, trg_ent_id, dob, UPPER(gn.val), tel_val , cd.val FROM public.ent_rel_tbl er inner join public.ent_vrsn_tbl ev ON er.src_ent_id = ev.ent_id inner join public.psn_tbl ps on  ev.ent_vrsn_id = ps.ent_vrsn_id left join public.cd_name_tbl cd  on er.cls_cd_id = cd.cd_id and cd.obslt_vrsn_seq_id is null left join public.cd_name_tbl gn ON gn.cd_id = gndr_cd_id left join public.ent_tel_tbl tel on tel.ent_id = er.src_ent_id WHERE er.obslt_vrsn_seq_id is null and trg_ent_id in ('"+mp+"') and ev.rplc_vrsn_id IS NULL ORDER BY cd.val ASC")) 
+                ResultSet rs_guid_ident = st_guid_ident.executeQuery("SELECT distinct src_ent_id, trg_ent_id, dob, UPPER(gn.val), tel_val , cd.val, sat.app_pub_id AS source_app FROM public.ent_rel_tbl er inner join public.ent_vrsn_tbl ev ON er.src_ent_id = ev.ent_id inner join public.psn_tbl ps on  ev.ent_vrsn_id = ps.ent_vrsn_id left join public.cd_name_tbl cd  on er.cls_cd_id = cd.cd_id and cd.obslt_vrsn_seq_id is null left join public.cd_name_tbl gn ON gn.cd_id = gndr_cd_id left join public.ent_tel_tbl tel on tel.ent_id = er.src_ent_id left join ent_vrsn_tbl evt on evt.ent_id=src_ent_id left join sec_prov_tbl spt ON evt.crt_prov_id = spt.prov_id left join sec_app_tbl sat on sat.app_id = spt.app_id WHERE er.obslt_vrsn_seq_id is null and trg_ent_id in ('"+mp+"') and ev.rplc_vrsn_id IS NULL ORDER BY cd.val ASC")) 
                 {
                     ArrayList<identifier> identifiers_list = getIdentifiers(mp, con);
 
@@ -140,19 +129,12 @@ public class issueHealthId {
                         String gender = rs_guid_ident.getString(4).toUpperCase();
                         String tel = rs_guid_ident.getString(5);
                         String cl = rs_guid_ident.getString(6);
+                        String app = rs_guid_ident.getString(7);
 
                         Patient ourPatient = new Patient();
                         ourPatient.setId(src_uuid);
                         
-                        String link = "";
-                        if (cl.contains("Verified"))
-                        {
-                            link = "http://127.0.0.1:8080/fhir/Patient/"+src_uuid;
-                        }
-                        else if (cl.contains("Linked"))
-                        {
-                            link = "http://127.0.0.1:8080/fhir/Patient/"+trg_uuid; 
-                        }
+                        String link = "http://127.0.0.1:8080/fhir/Patient/"+src_uuid; 
 
                         System.out.println(cl);
                         System.out.println(link);
@@ -238,7 +220,7 @@ public class issueHealthId {
 
                         System.out.println(encoded);
 
-                        HttpResponse<String> auth_response = authenticateClient();
+                        HttpResponse<String> auth_response = authenticateClient(app);
                         JSONObject token = new JSONObject(auth_response.body());
                         
                         String accessToken = (String) token.get("access_token"); 
@@ -309,7 +291,7 @@ public class issueHealthId {
             String ident_name = rs_ident.getString(2);
             String ident_val = rs_ident.getString(3);
            
-            if (!ident_name.contains("Health_ID") && (!ident_val.contains("NULL")))
+            if (!ident_name.contains("Health_ID"))
             {
                 identifiers_list.add(new identifier(uuid, ident_name, ident_val));   
             }
