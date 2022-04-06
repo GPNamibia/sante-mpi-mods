@@ -53,17 +53,17 @@ public class issueHealthId {
         if (app.equals("EDT"))
         {  
             client_id =  "EDT";
-            secret = "7f0TuB6r_X4E7C4QrH!b4B9DmM1Sxj2I0K1b";
+            secret = "***";
         }
         else if (app.equals("PTracker"))
         {
             client_id = "PTracker";
-            secret = "7JjGgU3H_Ihc8U4stX_B0s8Cqr2G7E0D1N8U";
+            secret = "***";
         }
         else if (app.equals("Quantum"))
         {
             client_id = "Quantum";
-            secret = "5HuXnl7W@KeX7W4dnu~f6o3U7B9t3R5SmLtP";
+            secret = "***";
         }
 
         Map<Object, Object> data;
@@ -129,9 +129,9 @@ public class issueHealthId {
     {
         String db_url = "jdbc:postgresql://localhost:5432/santedb";
         String user = "santedb";
-        String password = "SanteDB123";
+        String password = "***";
 
-        String mp = "1235d914-5779-4f0f-96f7-bfd2ff156728";
+        String mp = "8dc21bf4-1236-4b11-92ad-c82f5aaf6dc9";
 
         try (Connection con = DriverManager.getConnection(db_url, user, password);
                 
@@ -212,14 +212,14 @@ public class issueHealthId {
 
                         System.out.println(encoded);
 
-                        /*HttpResponse<String> auth_response = authenticateClient(app);
+                        HttpResponse<String> auth_response = authenticateClient(app);
                         JSONObject token = new JSONObject(auth_response.body());
                         
                         String accessToken = (String) token.get("access_token"); 
                         
                         String auth = "Bearer " + accessToken;
 
-                        postResource(link, encoded, auth);*/
+                        postResource(link, encoded, auth);
  
                     }
 
