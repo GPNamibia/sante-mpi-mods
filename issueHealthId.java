@@ -7,8 +7,8 @@ import java.sql.DriverManager;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
-import java.util.ArrayList;
-import java.util.Arrays;
+import java.util.ArrayList; 
+import org.postgresql.shaded.com.ongres.scram.common.bouncycastle.base64.Base64;
 import java.util.logging.Level;
 import java.util.logging.Logger;
  
@@ -19,12 +19,16 @@ import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.util.HashMap; 
 import java.util.Map;
+import java.util.UUID;
 import java.net.HttpURLConnection;
 import java.net.MalformedURLException;
 import java.net.ProtocolException;
 import java.net.URI;
 import java.net.URL;
 import java.net.URLEncoder;
+import java.nio.ByteBuffer;
+import java.nio.LongBuffer;
+import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 
 import ca.uhn.fhir.context.FhirContext; 
@@ -101,6 +105,25 @@ public class issueHealthId {
         return HttpRequest.BodyPublishers.ofString(builder.toString());
     }
 
+    private static String uuidToBase64(String uuid) {
+        ByteBuffer uuidBuffer = ByteBuffer.allocate(16);
+        LongBuffer longBuffer = uuidBuffer.asLongBuffer();
+        longBuffer.put(UUID.fromString(uuid).getMostSignificantBits());
+        longBuffer.put(UUID.fromString(uuid).getLeastSignificantBits());
+
+        String encoded = new String(Base64.encode(uuidBuffer.array()), Charset.forName("US-ASCII"));
+
+        return encoded;
+    }
+
+    private static String uuidFromBase64(String str) {
+        byte[] bytes = Base64.decode(str);
+        ByteBuffer bb = ByteBuffer.wrap(bytes);
+        UUID uuid = new UUID(bb.getLong(), bb.getLong());
+        return uuid.toString();
+
+    }
+
 
     public static void main( String[] args ) throws Exception
     {
@@ -108,7 +131,7 @@ public class issueHealthId {
         String user = "santedb";
         String password = "***";
 
-        String mp = "ef6ca111-fd5a-4f78-b89f-db29acc5f3d7";
+        String mp = "8dc21bf4-1236-4b11-92ad-c82f5aaf6dc9";
 
         try (Connection con = DriverManager.getConnection(db_url, user, password);
                 
@@ -139,36 +162,7 @@ public class issueHealthId {
                         System.out.println(cl);
                         System.out.println(link);
 
-                        String source = trg_uuid.replaceAll("[a-zA-Z-0]", "").substring(0, 8);
-                        String[] source_char = source.split("");
-                        int[] source_num = new int[source_char.length];
-
-                        for (int i = 0; i < source_char.length; i++) 
-                        {
-                            source_num[i] = Integer.parseInt(source_char[i]);
-                        }
-
-                        String key = "987654321"; 
-
-                        int[] src_idx = new int[source_num.length];
-
-                        for (int i=0; i<source_num.length; i++){
-                            int k_index = key.indexOf( String.valueOf(source_num[i])); 
-                            src_idx[i] = k_index; 
-                        }
-
-                        int seed = Arrays.stream(src_idx).reduce(0,(a, b)  -> a + b);
-
-                        int checkDigit  = (97 - seed + 1 ) % 97;
-
-                        int retVal = Integer.valueOf(source) + checkDigit;
-
-                        /*System.out.println(source);
-                        System.out.println(Arrays.toString(src_idx));
-                        System.out.println(seed);
-                        System.out.println(checkDigit);
-                        System.out.println(retVal);*/
-
+                        String encoded_uuid = uuidToBase64(trg_uuid);
                         
                         FhirContext ctx = FhirContext.forDstu2();
 
@@ -211,10 +205,8 @@ public class issueHealthId {
                             }
                             
                         }
-
-                        String h_id = "NAM_" + retVal;
                         
-                        ourPatient.addIdentifier().setSystem("http://ohie.org/Health_ID").setValue(h_id);
+                        ourPatient.addIdentifier().setSystem("http://ohie.org/Health_ID").setValue(encoded_uuid.replace("=", ""));
 
                         String encoded = ctx.newJsonParser().setPrettyPrint(true).encodeResourceToString(ourPatient);
 
