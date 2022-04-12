@@ -131,16 +131,11 @@ public class issueHealthId {
         String user = "santedb";
         String password = "***";
 
-        String mp = "8dc21bf4-1236-4b11-92ad-c82f5aaf6dc9";
-
         try (Connection con = DriverManager.getConnection(db_url, user, password);
                 
                 Statement st_guid_ident = con.createStatement();
-                ResultSet rs_guid_ident = st_guid_ident.executeQuery("SELECT distinct src_ent_id, trg_ent_id, dob, UPPER(gn.val), tel_val , cd.val, sat.app_pub_id AS source_app FROM public.ent_rel_tbl er inner join public.ent_vrsn_tbl ev ON er.src_ent_id = ev.ent_id inner join public.psn_tbl ps on  ev.ent_vrsn_id = ps.ent_vrsn_id left join public.cd_name_tbl cd  on er.cls_cd_id = cd.cd_id and cd.obslt_vrsn_seq_id is null left join public.cd_name_tbl gn ON gn.cd_id = gndr_cd_id left join public.ent_tel_tbl tel on tel.ent_id = er.src_ent_id left join ent_vrsn_tbl evt on evt.ent_id=src_ent_id left join sec_prov_tbl spt ON evt.crt_prov_id = spt.prov_id left join sec_app_tbl sat on sat.app_id = spt.app_id WHERE er.obslt_vrsn_seq_id is null and trg_ent_id in ('"+mp+"') and ev.rplc_vrsn_id IS NULL ORDER BY cd.val ASC")) 
+                ResultSet rs_guid_ident = st_guid_ident.executeQuery("SELECT distinct src_ent_id, trg_ent_id, dob, UPPER(gn.val), tel_val , cd.val, sat.app_pub_id AS source_app FROM public.ent_rel_tbl er inner join public.ent_vrsn_tbl ev ON er.src_ent_id = ev.ent_id inner join public.psn_tbl ps on  ev.ent_vrsn_id = ps.ent_vrsn_id left join public.cd_name_tbl cd  on er.cls_cd_id = cd.cd_id and cd.obslt_vrsn_seq_id is null left join public.cd_name_tbl gn ON gn.cd_id = gndr_cd_id left join public.ent_tel_tbl tel on tel.ent_id = er.src_ent_id left join ent_vrsn_tbl evt on evt.ent_id=src_ent_id left join sec_prov_tbl spt ON evt.crt_prov_id = spt.prov_id left join sec_app_tbl sat on sat.app_id = spt.app_id WHERE er.obslt_vrsn_seq_id is null and ev.rplc_vrsn_id IS NULL ORDER BY cd.val ASC")) 
                 {
-                    ArrayList<identifier> identifiers_list = getIdentifiers(mp, con);
-
-                    ArrayList<address> add_list = getAddress(mp, con);
 
                     while(rs_guid_ident.next())
                     {
@@ -153,6 +148,10 @@ public class issueHealthId {
                         String tel = rs_guid_ident.getString(5);
                         String cl = rs_guid_ident.getString(6);
                         String app = rs_guid_ident.getString(7);
+
+                        ArrayList<identifier> identifiers_list = getIdentifiers(trg_uuid, con);
+
+                        ArrayList<address> add_list = getAddress(trg_uuid, con);
 
                         Patient ourPatient = new Patient();
                         ourPatient.setId(src_uuid);
@@ -190,7 +189,7 @@ public class issueHealthId {
                                 }
     
                                 if (a.add_type.contains("PostalCode")){
-                                    address = a.add_type;
+                                    address = a.add_val;
                                 }  
                             }                               
                         }
@@ -255,7 +254,9 @@ public class issueHealthId {
     }
 
     private static ArrayList<address> getAddress(String mp, Connection con) throws SQLException {
-        String sql_add = "SELECT DISTINCT src_ent_id,cd.val as add_type, ent_add_val.val as add_val from public.ent_addr_tbl ent_add inner join public.ent_rel_tbl er on ent_add.ent_id = er.src_ent_id left join public.ent_addr_cmp_tbl ent_add_comp on ent_add_comp.addr_id = ent_add.addr_id left join public.ent_addr_cmp_val_tbl ent_add_val on ent_add_val.val_seq_id = ent_add_comp.val_seq_id LEFT JOIN public.cd_name_tbl cd ON cd.cd_id = ent_add_comp.typ_cd_id where trg_ent_id = '"+mp+"'";
+        String sql_add = 
+        "select * from ( SELECT DISTINCT src_ent_id,cd.val as add_type, ent_add_val.val, ent_add_val.val_seq_id, trg_ent_id, row_number() over (partition by src_ent_id, cd.val order by ent_add_val.val_seq_id) as rnum from public.ent_addr_tbl ent_add inner join public.ent_rel_tbl er on ent_add.ent_id = er.src_ent_id  left join public.ent_addr_cmp_tbl ent_add_comp on ent_add_comp.addr_id = ent_add.addr_id  left join public.ent_addr_cmp_val_tbl ent_add_val on  ent_add_val.val_seq_id = ent_add_comp.val_seq_id  LEFT JOIN public.cd_name_tbl cd ON cd.cd_id = ent_add_comp.typ_cd_id ) a where a.rnum = 1 and a.trg_ent_id = '"+mp+"' ORDER BY a.val_seq_id DESC";
+
 
         Statement st_add = con.createStatement();
         ResultSet rs_add = st_add.executeQuery(sql_add);
