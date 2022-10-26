@@ -12,8 +12,7 @@ namespace SanteHealthID
     public class SanteHealthIDGeneration
     {
         private readonly AdoPersistenceConfigurationSection _configuration;
-
-        private String codePoints = "123456789ABCDEFGHIJKLMNPQRSTUVWXYZ";
+        private String codePoints = "123456789ACDEFGHJKLMNPRTUVWXY";
         private readonly Tracer _tracer = Tracer.GetTracer(typeof(SanteHealthIDGeneration));
 
         public SanteHealthIDGeneration(IConfigurationManager configurationManager)
