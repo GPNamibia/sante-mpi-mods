@@ -130,7 +130,7 @@ namespace SanteHealthID
                     var sqlStatement = context.CreateSqlStatement("SELECT nextval(?)", sequenceName);
                     long sequence_val = context.ExecuteScalar<long>(sqlStatement);
                     Console.WriteLine("Sequence value is {0}", sequence_val);
-                    var padToLength = 6;
+                    var padToLength = 5;
 
                     char[] baseCharacters = { '1', '2', '3', '4', '5', '6', '7', '8', '9', 'A', 'C', 'D', 'E', 'F', 'G', 'H', 'J', 'K', 'L', 'M', 'N', 'P', 'R', 'T', 'U', 'V', 'W', 'X', 'Y' };
 
