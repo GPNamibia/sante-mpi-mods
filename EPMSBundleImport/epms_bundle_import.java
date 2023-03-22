@@ -1,7 +1,7 @@
 package bmt;
  
 import java.util.HashMap;
-import java.util.Map; 
+import java.util.Map;
 
 import org.json.JSONObject;
 
@@ -17,7 +17,7 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path; 
 
-public class ptracker_bundle_import {
+public class epms_bundle_import {
 
     // one instance, reuse
     private final static HttpClient httpClient = HttpClient.newBuilder()
@@ -31,7 +31,7 @@ public class ptracker_bundle_import {
         Map<Object, Object> data;
         data = new HashMap<>();
         data.put("grant_type", "client_credentials");
-        data.put("client_id", "PTracker");
+        data.put("client_id", "Quantum");
         data.put("client_secret", "***");
 
         HttpRequest request = HttpRequest.newBuilder()
@@ -54,7 +54,7 @@ public class ptracker_bundle_import {
         data = new HashMap<>();
         data.put("grant_type", "refresh_token");
         data.put("refresh_token", refreshToken);
-        data.put("client_id", "PTracker");
+        data.put("client_id", "Quantum");
         data.put("client_secret", "***");
 
         HttpRequest request = HttpRequest.newBuilder()
@@ -80,18 +80,29 @@ public class ptracker_bundle_import {
             builder.append("=");
             builder.append(URLEncoder.encode(entry.getValue().toString(), StandardCharsets.UTF_8));
         }
-        
+       
         return HttpRequest.BodyPublishers.ofString(builder.toString());
     }
     public static void main( String[] args ) throws Exception 
     {
+        String folderPath = "epms";
+        File folder = new File(folderPath);
 
-        for (int i=1; i<=41; i++){ 
-            String fn = "ptracker/bundle_"+i+".json";
-            
-            Path fileName = Path.of(fn);
-            String content = Files.readString(fileName);
-            
+        int batchSize = 6; // number of files to process in each batch
+        List<File> files = new ArrayList<>();
+        for (File file : folder.listFiles()) {
+            if (file.isFile() && file.getName().endsWith(".json")) {
+                files.add(file);
+            }
+        }
+
+        int numThreads = (int) Math.ceil((double) files.size() / batchSize); 
+        
+
+        System.out.println( "Threads: "+ numThreads);
+        int startIndex = 0;
+        System.out.println(files.size());
+        while (startIndex < files.size()) {
             HttpResponse<String> auth_response = authenticateClient();
             JSONObject token = new JSONObject(auth_response.body());
             
@@ -99,25 +110,58 @@ public class ptracker_bundle_import {
             
             String auth = "Bearer " + accessToken;
 
-            URL url = new URL("http://localhost:8080/fhir/Bundle");
-            HttpURLConnection http = (HttpURLConnection)url.openConnection();
-            http.setRequestMethod("POST");
-            http.setDoOutput(true);
-            http.setRequestProperty("Authorization", auth);
-            http.setRequestProperty("Accept", "text/html,application/fhir+xml,application/xml;q=0.9,*/*;q=0.8");
-        
-            http.setRequestProperty("Accept", "application/fhir+json");
-            http.setRequestProperty("Content-Type", "application/fhir+json");
+            int endIndex = Math.min(startIndex + batchSize, files.size());
+            List<File> batchFiles = files.subList(startIndex, endIndex);
+            BundleFileBatchProcessor f = new BundleFileBatchProcessor(batchFiles, auth);
 
-            String data = content;
-
-            byte[] out = data.getBytes(StandardCharsets.UTF_8);
-
-            OutputStream stream = http.getOutputStream();
-            stream.write(out);
-
-            System.out.println(fn + ": "+http.getResponseCode() + " " + http.getResponseMessage());
-            http.disconnect();
+            f.start(); 
+            startIndex = endIndex;
         }
     }
 }
+
+class BundleFileBatchProcessor extends Thread {
+    private final List<File> files;
+    private String auth;
+
+    public BundleFileBatchProcessor(List<File> files, String auth) {
+        this.files = files;
+        this.auth = auth;
+    }
+
+    @Override
+    public void run() {
+        for (File file : files) {
+            
+            // process each file here
+
+            try {
+                Path fileName = Path.of("epms/"+file.getName());
+                
+                String content = Files.readString(fileName);
+                URL url = new URL("http://localhost:8080/fhir/Bundle");
+                HttpURLConnection http = (HttpURLConnection)url.openConnection();
+                http.setRequestMethod("POST");
+                http.setDoOutput(true);
+                http.setRequestProperty("Authorization", auth);
+                http.setRequestProperty("Accept", "text/html,application/fhir+xml,application/xml;q=0.9,*/*;q=0.8");
+            
+                http.setRequestProperty("Accept", "application/fhir+json");
+                http.setRequestProperty("Content-Type", "application/fhir+json");
+
+                String data = content;
+
+                byte[] out = data.getBytes(StandardCharsets.UTF_8);
+
+                OutputStream stream = http.getOutputStream();
+                stream.write(out);
+
+                System.out.println(file.getName() + ": "+http.getResponseCode() + " " + http.getResponseMessage());
+                http.disconnect();
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        }
+    }
+}
+
