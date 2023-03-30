@@ -10,4 +10,6 @@ This repository contains scripts that
 
 4. SanteMPI scripts that generate a Health ID when a patient is created. Refer to the scripts in CustomHealthID folder.
 
+4. SanteMPI scripts that creates a FHIR extension to store the NPRS validation status. Refer to the scripts in NPRSStatusExtension folder.
+
 Additionally, a dummy dataset of 2 million patients has been added to this repository. Refer to the DummyDataset folder.
