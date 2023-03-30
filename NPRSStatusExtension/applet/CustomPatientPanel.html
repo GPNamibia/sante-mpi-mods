@@ -1,0 +1,26 @@
+<div xmlns="http://www.w3.org/1999/xhtml"
+    xmlns:sdb="http://santedb.org/applet">
+    <sdb:widget
+        name="project.widget.patient.custom"
+        type="Panel"
+        size="Medium"
+        order="20"
+        altViews="None"
+        context="org.santedb.patient.demographics"
+        header-class="bl-primary">
+        <sdb:icon>fas fa-check-double</sdb:icon>
+        <sdb:description lang="en">Custom Patient Panel</sdb:description>
+    </sdb:widget>
+
+    <div ng-if="!scopedObject">
+        <i class="fas fa-spin fa-circle-notch"></i> {{ 'ui.wait' | i18n }}
+    </div>
+    <div class="col ng-scope col-sm-12 col-sm-12"  >
+        <div class="ng-scope" ng-if="scopedObject">
+            <div class="row">
+                <label class="col-md-3 col-xs-12 control-label">{{ 'CustomPatientPanel.ui.extensions.nprsState' | i18n }}</label>
+                <div class="col-md-9 col-xs-12">{{ scopedObject.extension['urn:validationproject:nprsStatus'][0].hexDecode() }}</div>
+            </div>
+        </div>
+    </div>
+</div>
