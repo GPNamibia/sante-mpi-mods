@@ -1,5 +1,7 @@
 <div xmlns="http://www.w3.org/1999/xhtml"
-    xmlns:sdb="http://santedb.org/applet">
+    xmlns:sdb="http://santedb.org/applet"
+    oc-lazy-load="{ name: 'base64FromHexEncoding', files: ['/custompatientpanel/controllers/base64Encode.js'] }"
+>
     <sdb:widget
         name="project.widget.patient.custom"
         type="Panel"
@@ -15,11 +17,19 @@
     <div ng-if="!scopedObject">
         <i class="fas fa-spin fa-circle-notch"></i> {{ 'ui.wait' | i18n }}
     </div>
-    <div class="col ng-scope col-sm-12 col-sm-12"  >
+    <div class="col ng-scope col-sm-12 col-sm-12" >
         <div class="ng-scope" ng-if="scopedObject">
+
             <div class="row">
-                <label class="col-md-3 col-xs-12 control-label">{{ 'CustomPatientPanel.ui.extensions.nprsState' | i18n }}</label>
+                <label class="col-md-3 col-xs-12 control-label">{{ 'custompatientpanel.ui.extensions.nprsState' | i18n }}</label>
                 <div class="col-md-9 col-xs-12">{{ scopedObject.extension['urn:validationproject:nprsStatus'][0].hexDecode() }}</div>
+            </div>
+
+            <div class="row" ng-if="scopedObject.extension['http://santedb.org/extensions/core/jpegPhoto']">
+                <label class="col-md-3 col-xs-12 control-label">{{ 'custompatientpanel.ui.extensions.photo' | i18n }}</label>
+                
+                <div class="col-md-9 col-xs-12" ng-controller="base64FromHexEncoding"><img ng-src="{{ trustedPhoto }}"  width="200" height="200"/></div>
+            
             </div>
         </div>
     </div>
