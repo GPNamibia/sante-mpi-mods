@@ -1,0 +1,14 @@
+
+<AppletManifest xmlns="http://santedb.org/applet">
+  <info id="custompatientpanel" version="1.0">
+    <name lang="en">Custom Patient Panel</name>
+    <author>UCSF GP Namibia</author>
+  </info>
+      
+  <strings lang="en">
+    <string key="project.widget.patient.custom">Custom Patient Properties</string>
+    <string key="custompatientpanel.ui.extensions.nprsState">NPRS Status</string>
+    <string key="custompatientpanel.ui.extensions.photo">Patient Photo</string>
+  </strings>
+      
+</AppletManifest>
